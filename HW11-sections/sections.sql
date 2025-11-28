@@ -28,7 +28,7 @@ FROM bookings.bookings
 GROUP BY EXTRACT(YEAR FROM book_date)::text || '-' || LPAD(EXTRACT(MONTH FROM book_date)::text, 2, '0')
 ORDER BY 1;
 /*
-Section	Rows	  MinBookDate	                  MaxBookDate
+Section	Rows	MinBookDate						MaxBookDate
 2025-09	448064	2025-09-01 00:00:06.265219+00	2025-09-30 23:59:58.026243+00
 2025-10	434159	2025-10-01 00:00:08.899725+00	2025-10-31 23:59:53.263233+00
 2025-11	410670	2025-11-01 00:00:01.790251+00	2025-11-30 23:59:28.616825+00
@@ -81,21 +81,21 @@ FROM information_schema.tables
 WHERE table_schema = 'bookings_copy'
 ORDER BY table_name;
 /*
-table_catalog	table_schema	table_name	      table_type
-demo	        bookings_copy	bookings	        BASE TABLE
-demo	        bookings_copy	bookings_2025_09	BASE TABLE
-demo	        bookings_copy	bookings_2025_10	BASE TABLE
-demo	        bookings_copy	bookings_2025_11	BASE TABLE
-demo	        bookings_copy	bookings_2025_12	BASE TABLE
-demo	        bookings_copy	bookings_2026_01	BASE TABLE
-demo	        bookings_copy	bookings_2026_02	BASE TABLE
-demo	        bookings_copy	bookings_2026_03	BASE TABLE
-demo	        bookings_copy	bookings_2026_04	BASE TABLE
-demo	        bookings_copy	bookings_2026_05	BASE TABLE
-demo	        bookings_copy	bookings_2026_06	BASE TABLE
-demo	        bookings_copy	bookings_2026_07	BASE TABLE
-demo	        bookings_copy	bookings_2026_08	BASE TABLE
-demo	        bookings_copy	bookings_other	  BASE TABLE
+table_catalog	table_schema	table_name			table_type
+demo			bookings_copy	bookings			BASE TABLE
+demo			bookings_copy	bookings_2025_09	BASE TABLE
+demo			bookings_copy	bookings_2025_10	BASE TABLE
+demo			bookings_copy	bookings_2025_11	BASE TABLE
+demo			bookings_copy	bookings_2025_12	BASE TABLE
+demo			bookings_copy	bookings_2026_01	BASE TABLE
+demo			bookings_copy	bookings_2026_02	BASE TABLE
+demo			bookings_copy	bookings_2026_03	BASE TABLE
+demo			bookings_copy	bookings_2026_04	BASE TABLE
+demo			bookings_copy	bookings_2026_05	BASE TABLE
+demo			bookings_copy	bookings_2026_06	BASE TABLE
+demo			bookings_copy	bookings_2026_07	BASE TABLE
+demo			bookings_copy	bookings_2026_08	BASE TABLE
+demo			bookings_copy	bookings_other		BASE TABLE
 */
 
 -- копируем данные
@@ -119,7 +119,7 @@ SELECT '2026-06' AS "Section", COUNT(*) AS "Rows", MIN(book_date) AS "MinBookDat
 SELECT '2026-07' AS "Section", COUNT(*) AS "Rows", MIN(book_date) AS "MinBookDate", MAX(book_date) AS "MaxBookDate" FROM bookings_copy.bookings_2026_07 UNION ALL
 SELECT '2026-08' AS "Section", COUNT(*) AS "Rows", MIN(book_date) AS "MinBookDate", MAX(book_date) AS "MaxBookDate" FROM bookings_copy.bookings_2026_08 ORDER BY 1;
 /*
-Section	Rows	  MinBookDate	                  MaxBookDate
+Section	Rows	MinBookDate						MaxBookDate
 2025-09	448064	2025-09-01 00:00:06.265219+00	2025-09-30 23:59:58.026243+00
 2025-10	434159	2025-10-01 00:00:08.899725+00	2025-10-31 23:59:53.263233+00
 2025-11	410670	2025-11-01 00:00:01.790251+00	2025-11-30 23:59:28.616825+00
