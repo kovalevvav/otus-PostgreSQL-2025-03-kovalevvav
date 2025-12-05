@@ -51,12 +51,12 @@ CREATE OR REPLACE FUNCTION fn_fill_goods_sum_mart_after_upd_del_sales() RETURNS 
         VALUES (s.goods_name, s.sum_sale);
 
     WITH cte AS (
-        SELECT g.goods_name AS goods_name, SUM(g.goods_price * s.sales_qty) AS sum_sale
+        SELECT g.goods_name AS goods_name, SUM(g.goods_price * CASE WHEN s.sales_id IS NULL THEN 0 ELSE s.sales_qty END) AS sum_sale
         FROM goods g
-        INNER JOIN sales s ON s.goods_id = g.goods_id
-        WHERE g.goods_id IN (SELECT goods_id FROM del)
+        LEFT JOIN sales s ON s.goods_id = g.goods_id
+        WHERE EXISTS(SELECT 1 FROM del t WHERE t.goods_id = g.goods_id LIMIT 1)
         GROUP BY g.goods_name
-        HAVING SUM(g.goods_price * s.sales_qty) <= 0) -- удаляем все с 0
+        HAVING SUM(g.goods_price * CASE WHEN s.sales_id IS NULL THEN 0 ELSE s.sales_qty END) <= 0) -- удаляем все с 0
     DELETE FROM goods_sum_mart WHERE goods_name IN (SELECT goods_name FROM cte);
     RETURN NULL; -- Для триггеров AFTER на уровне оператора возвращаемое значение игнорируется
 END;
@@ -107,6 +107,17 @@ SELECT * FROM goods_sum_mart ORDER BY goods_name;
 
 -- Удалим строки
 DELETE FROM sales WHERE sales_id > 4;
+-- отчет
+SELECT g.goods_name, sum(g.goods_price * s.sales_qty)
+FROM goods g
+INNER JOIN sales s ON s.goods_id = g.goods_id
+GROUP BY g.goods_name
+ORDER BY goods_name;
+-- витрина
+SELECT * FROM goods_sum_mart ORDER BY goods_name;
+
+-- Удалим все продажи ро одному из товаров
+DELETE FROM sales WHERE sales_id = 4;
 -- отчет
 SELECT g.goods_name, sum(g.goods_price * s.sales_qty)
 FROM goods g
