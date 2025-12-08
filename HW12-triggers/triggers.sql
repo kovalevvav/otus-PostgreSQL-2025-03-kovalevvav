@@ -13,7 +13,7 @@ CREATE OR REPLACE FUNCTION fn_fill_goods_sum_mart_after_ins_sales() RETURNS TRIG
         SELECT g.goods_name AS goods_name, SUM(g.goods_price * s.sales_qty) AS sum_sale
         FROM goods g
         INNER JOIN sales s ON s.goods_id = g.goods_id
-        WHERE g.goods_id  IN (SELECT goods_id FROM ins)
+        WHERE g.goods_id  IN (SELECT goods_id FROM new_table)
         GROUP BY g.goods_name)
     MERGE INTO goods_sum_mart AS t
     USING cte AS s ON s.goods_name = t.goods_name
@@ -29,7 +29,7 @@ $$ LANGUAGE plpgsql;
 -- Так как триггер нужен для переноса данных, используем AFTER
 CREATE OR REPLACE TRIGGER tg_after_ins_sales
 AFTER INSERT ON sales -- Срабатывает в таблице sales после вставки
-REFERENCING NEW TABLE AS ins -- доступ к Transition Tables
+REFERENCING NEW TABLE AS new_table -- доступ к Transition Tables
 FOR EACH STATEMENT -- Выполняется для каждого оператора
 EXECUTE FUNCTION fn_fill_goods_sum_mart_after_ins_sales();
 
@@ -39,7 +39,7 @@ CREATE OR REPLACE FUNCTION fn_fill_goods_sum_mart_after_upd_del_sales() RETURNS 
         SELECT g.goods_name AS goods_name, SUM(g.goods_price * s.sales_qty) AS sum_sale
         FROM goods g
         INNER JOIN sales s ON s.goods_id = g.goods_id
-        WHERE g.goods_id IN (SELECT goods_id FROM del)
+        WHERE g.goods_id IN (SELECT goods_id FROM old_table)
         GROUP BY g.goods_name
         HAVING SUM(g.goods_price * s.sales_qty) > 0) -- вставляем-обновляем только с суммами > 0
     MERGE INTO goods_sum_mart AS t
@@ -54,7 +54,7 @@ CREATE OR REPLACE FUNCTION fn_fill_goods_sum_mart_after_upd_del_sales() RETURNS 
         SELECT g.goods_name AS goods_name, SUM(g.goods_price * CASE WHEN s.sales_id IS NULL THEN 0 ELSE s.sales_qty END) AS sum_sale
         FROM goods g
         LEFT JOIN sales s ON s.goods_id = g.goods_id
-        WHERE EXISTS(SELECT 1 FROM del t WHERE t.goods_id = g.goods_id LIMIT 1)
+        WHERE EXISTS(SELECT 1 FROM old_table t WHERE t.goods_id = g.goods_id LIMIT 1)
         GROUP BY g.goods_name
         HAVING SUM(g.goods_price * CASE WHEN s.sales_id IS NULL THEN 0 ELSE s.sales_qty END) <= 0) -- удаляем все с 0
     DELETE FROM goods_sum_mart WHERE goods_name IN (SELECT goods_name FROM cte);
@@ -65,14 +65,14 @@ $$ LANGUAGE plpgsql;
 -- Так как триггер нужен для переноса данных, используем AFTER
 CREATE OR REPLACE TRIGGER tg_after_upd_sales
 AFTER UPDATE ON sales -- Срабатывает в таблице sales после обновления
-REFERENCING OLD TABLE AS del -- доступ к Transition Tables
+REFERENCING OLD TABLE AS old_table -- доступ к Transition Tables
 FOR EACH STATEMENT -- Выполняется для каждого оператора
 EXECUTE FUNCTION fn_fill_goods_sum_mart_after_upd_del_sales();
 -- Создадим  триггер на таблице sales, после удаления
 -- Так как триггер нужен для переноса данных, используем AFTER
 CREATE OR REPLACE TRIGGER tg_after_del_sales
 AFTER DELETE ON sales -- Срабатывает в таблице sales после удаления
-REFERENCING OLD TABLE AS del -- доступ к Transition Tables
+REFERENCING OLD TABLE AS old_table -- доступ к Transition Tables
 FOR EACH STATEMENT -- Выполняется для каждого оператора
 EXECUTE FUNCTION fn_fill_goods_sum_mart_after_upd_del_sales();
 
